@@ -88,6 +88,18 @@ io.on("connection", (socket) => {
         createdAt: Date.now(),
       });
 
+
+    // 🔥 IMPORTANT: Update lastMessage & Timestamp
+    await Conversation.findByIdAndUpdate(
+      conversationId,
+      {
+        lastMessage: msg._id,
+        updatedAt: Date.now(),
+      },
+      { new: true }
+    );
+
+
       io.to(String(data.to)).emit("receive-message", msg);
       io.to(String(userId)).emit("message-sent", msg);
 
