@@ -103,7 +103,8 @@ io.on("connection", (socket) => {
       io.to(String(data.to)).emit("receive-message", msg);
       io.to(String(userId)).emit("message-sent", msg);
 
-      ack?.({ status: "ok", message: msg });
+     ack?.(msg);
+
     } catch (e) {
       ack?.({ status: "error", message: "server_error" });
     }
