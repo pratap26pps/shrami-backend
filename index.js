@@ -37,6 +37,7 @@ const io = new Server(server, {
     origin: ["http://localhost:3000", "https://corptube-alpha.vercel.app"],
     methods: ["GET", "POST"],
   },
+   path: "/socket.io",
 });
 
 // Map user → socket IDs
@@ -49,7 +50,7 @@ io.use((socket, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.userId = decoded.userId;
+    socket.userId = decoded.id;
     next();
   } catch {
     next(new Error("INVALID_TOKEN"));
@@ -57,7 +58,7 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  const userId = socket.userId;
+  const userId = String(socket.userId);
 
   if (!userSockets.has(userId)) userSockets.set(userId, new Set());
   userSockets.get(userId).add(socket.id);
