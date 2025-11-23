@@ -3,44 +3,106 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
+import connectDB from "./src/config/db.js";
+import jwt from "jsonwebtoken";
+import Message from "./src/models/Message.js";
+import Conversation from "./src/models/Conversation.js";
+import messageRoutes from "./src/routes/messageRoutes.js";
+import conversationRoutes from "./src/routes/conversationRoutes.js";
 
 dotenv.config();
+connectDB();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+const PORT = process.env.PORT || 5000;
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://corptube-alpha.vercel.app"
+    ],
+    credentials: true,
+  })
+);
 
-// HTTP Server for Socket.io
+// REST API routes
+app.use("/api/messages", messageRoutes);
+app.use("/api/conversations", conversationRoutes);
+
 const server = http.createServer(app);
 
-// Socket.io Setup
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000","https://corptube-alpha.vercel.app"], // For development, use your vercel URL in production
+    origin: ["http://localhost:3000", "https://corptube-alpha.vercel.app"],
     methods: ["GET", "POST"],
   },
 });
 
-// Socket events handling
-io.on("connection", (socket) => {
-  console.log("🔗 User connected:", socket.id);
+// Map user → socket IDs
+const userSockets = new Map();
 
-  socket.on("send-message", (data) => {
-    io.emit("receive-message", data);
+// JWT Authenticate each socket
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error("NO_TOKEN"));
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    next();
+  } catch {
+    next(new Error("INVALID_TOKEN"));
+  }
+});
+
+io.on("connection", (socket) => {
+  const userId = socket.userId;
+
+  if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+  userSockets.get(userId).add(socket.id);
+
+  socket.join(userId);
+
+  console.log("User connected:", userId);
+
+  // ========== SEND MESSAGE ==========
+  socket.on("send-message", async (data, ack) => {
+    try {
+      let conversationId = data.conversationId;
+
+      if (!conversationId) {
+        const newConv = await Conversation.create({
+          participants: [userId, data.to],
+        });
+        conversationId = newConv._id;
+      }
+
+      const msg = await Message.create({
+        conversation: conversationId,
+        sender: userId,
+        recipient: data.to,
+        text: data.text,
+        media: data.media,
+        createdAt: Date.now(),
+      });
+
+      io.to(String(data.to)).emit("receive-message", msg);
+      io.to(String(userId)).emit("message-sent", msg);
+
+      ack?.({ status: "ok", message: msg });
+    } catch (e) {
+      ack?.({ status: "error", message: "server_error" });
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("Disconnected:", socket.id);
   });
 });
 
-// Test API route
-app.get("/", (req, res) => {
-  res.send("Backend running successfully!");
-});
-
-const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
