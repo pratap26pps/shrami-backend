@@ -122,16 +122,33 @@ io.on("connection", (socket) => {
       msg.text = data.text;
       await msg.save();
 
-      // Emit to both users in the conversation
-      const conversation = await Conversation.findById(msg.conversation);
-      if (conversation) {
-        const updatedMsg = await Message.findById(msg._id);
-        conversation.participants.forEach(participantId => {
-          io.to(String(participantId)).emit("message-edited", updatedMsg);
-        });
+      // Get updated message with all fields
+      const updatedMsg = await Message.findById(msg._id);
+      const recipientId = String(msg.recipient);
+
+      // Emit to both users - try conversation first, then fallback to direct emit
+      let emitted = false;
+      if (msg.conversation) {
+        const conversation = await Conversation.findById(msg.conversation);
+        if (conversation && conversation.participants && conversation.participants.length > 0) {
+          // Emit to all participants (convert ObjectIds to strings)
+          conversation.participants.forEach(participantId => {
+            const participantIdStr = String(participantId);
+            io.to(participantIdStr).emit("message-edited", updatedMsg);
+          });
+          emitted = true;
+        }
       }
 
-      ack?.({ status: "ok", message: msg });
+      // Always emit directly to sender and recipient as well (ensures delivery)
+      if (!emitted || true) { // Always do direct emit as backup
+        io.to(String(userId)).emit("message-edited", updatedMsg);
+        io.to(recipientId).emit("message-edited", updatedMsg);
+      }
+
+      console.log(`✅ Message edited (ID: ${data.messageId}), emitted to sender (${userId}) and recipient (${recipientId})`);
+
+      ack?.({ status: "ok", message: updatedMsg });
     } catch (e) {
       console.error("Edit message error:", e);
       ack?.({ status: "error", message: "server_error" });
@@ -147,18 +164,38 @@ io.on("connection", (socket) => {
       }
 
       const conversationId = msg.conversation;
+      const recipientId = String(msg.recipient);
+      
+      // Delete the message
       await Message.deleteOne({ _id: data.messageId });
 
-      // Emit to both users in the conversation
-      const conversation = await Conversation.findById(conversationId);
-      if (conversation) {
-        conversation.participants.forEach(participantId => {
-          io.to(String(participantId)).emit("message-deleted", { messageId: data.messageId });
-        });
+      const deletePayload = { messageId: data.messageId };
+
+      // Emit to both users - try conversation first, then fallback to direct emit
+      let emitted = false;
+      if (conversationId) {
+        const conversation = await Conversation.findById(conversationId);
+        if (conversation && conversation.participants && conversation.participants.length > 0) {
+          // Emit to all participants (convert ObjectIds to strings)
+          conversation.participants.forEach(participantId => {
+            const participantIdStr = String(participantId);
+            io.to(participantIdStr).emit("message-deleted", deletePayload);
+          });
+          emitted = true;
+        }
       }
+
+      // Always emit directly to sender and recipient as well (ensures delivery)
+      if (!emitted || true) { // Always do direct emit as backup
+        io.to(String(userId)).emit("message-deleted", deletePayload);
+        io.to(recipientId).emit("message-deleted", deletePayload);
+      }
+
+      console.log(`✅ Message deleted (ID: ${data.messageId}), emitted to sender (${userId}) and recipient (${recipientId})`);
 
       ack?.({ status: "ok" });
     } catch (e) {
+      console.error("Delete message error:", e);
       ack?.({ status: "error", message: "server_error" });
     }
   });
