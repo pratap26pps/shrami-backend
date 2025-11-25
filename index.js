@@ -85,6 +85,7 @@ io.on("connection", (socket) => {
         recipient: data.to,
         text: data.text,
         media: data.media,
+        mediaType: data.mediaType,
         createdAt: Date.now(),
       });
 
@@ -110,8 +111,107 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ========== EDIT MESSAGE ==========
+  socket.on("edit-message", async (data, ack) => {
+    try {
+      const msg = await Message.findOne({ _id: data.messageId, sender: userId });
+      if (!msg) {
+        return ack?.({ status: "error", message: "Message not found or unauthorized" });
+      }
+
+      msg.text = data.text;
+      await msg.save();
+
+      // Emit to both users in the conversation
+      const conversation = await Conversation.findById(msg.conversation);
+      if (conversation) {
+        const updatedMsg = await Message.findById(msg._id);
+        conversation.participants.forEach(participantId => {
+          io.to(String(participantId)).emit("message-edited", updatedMsg);
+        });
+      }
+
+      ack?.({ status: "ok", message: msg });
+    } catch (e) {
+      console.error("Edit message error:", e);
+      ack?.({ status: "error", message: "server_error" });
+    }
+  });
+
+  // ========== DELETE MESSAGE ==========
+  socket.on("delete-message", async (data, ack) => {
+    try {
+      const msg = await Message.findOne({ _id: data.messageId, sender: userId });
+      if (!msg) {
+        return ack?.({ status: "error", message: "Message not found or unauthorized" });
+      }
+
+      const conversationId = msg.conversation;
+      await Message.deleteOne({ _id: data.messageId });
+
+      // Emit to both users in the conversation
+      const conversation = await Conversation.findById(conversationId);
+      if (conversation) {
+        conversation.participants.forEach(participantId => {
+          io.to(String(participantId)).emit("message-deleted", { messageId: data.messageId });
+        });
+      }
+
+      ack?.({ status: "ok" });
+    } catch (e) {
+      ack?.({ status: "error", message: "server_error" });
+    }
+  });
+
+  // ========== MARK MESSAGE AS READ ==========
+  socket.on("mark-as-read", async (data, ack) => {
+    try {
+      const { messageIds } = data;
+      if (!Array.isArray(messageIds) || messageIds.length === 0) {
+        return ack?.({ status: "error", message: "Invalid messageIds" });
+      }
+
+      // Update all messages that are sent to this user (recipient)
+      const result = await Message.updateMany(
+        { 
+          _id: { $in: messageIds },
+          recipient: userId,
+          isRead: false 
+        },
+        { 
+          isRead: true,
+          readAt: new Date()
+        }
+      );
+
+      // Get updated messages to emit
+      const updatedMessages = await Message.find({ _id: { $in: messageIds } });
+      
+      // Emit to sender that messages were read
+      updatedMessages.forEach(msg => {
+        io.to(String(msg.sender)).emit("message-read", {
+          messageId: msg._id,
+          isRead: true,
+          readAt: msg.readAt
+        });
+      });
+
+      ack?.({ status: "ok", count: result.modifiedCount });
+    } catch (e) {
+      console.error("Mark as read error:", e);
+      ack?.({ status: "error", message: "server_error" });
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("Disconnected:", socket.id);
+    // Clean up userSockets map
+    if (userSockets.has(userId)) {
+      userSockets.get(userId).delete(socket.id);
+      if (userSockets.get(userId).size === 0) {
+        userSockets.delete(userId);
+      }
+    }
   });
 });
 

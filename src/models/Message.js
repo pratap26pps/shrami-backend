@@ -7,6 +7,7 @@ const MessageSchema = new mongoose.Schema(
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     text: String,
     media: String,
+    mediaType: String, // 'image', 'video', 'audio'
     isRead: { type: Boolean, default: false },
     readAt: Date,
   },
