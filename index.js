@@ -9,6 +9,7 @@ import Message from "./src/models/Message.js";
 import Conversation from "./src/models/Conversation.js";
 import messageRoutes from "./src/routes/messageRoutes.js";
 import conversationRoutes from "./src/routes/conversationRoutes.js";
+import authRoutes from "./src/routes/authroute.js";
 
 dotenv.config();
 connectDB();
@@ -29,6 +30,7 @@ app.use(
 // REST API routes
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/auth", authRoutes);
 
 const server = http.createServer(app);
 
