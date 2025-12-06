@@ -126,7 +126,11 @@ try{
   );
 
   res.cookie("token", token, cookieOptions);
-  return res.redirect(`${process.env.FRONTEND_SERVICE}/dashboard/${user?.id}`);
+     return res.json({
+      success: true,
+      message: "Google signup successful",
+      user: user,
+    });
 
 }catch(err){
  return res.status(500).json({success:false,error:err.message})
