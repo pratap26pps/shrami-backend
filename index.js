@@ -23,6 +23,8 @@ app.use(
       "http://localhost:3000",
       "https://corptube-alpha.vercel.app",
       "https://www.corptube.in",
+      "https://corptube.in",
+
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -40,7 +42,10 @@ const io = new Server(server, {
   cors: {
     origin: ["http://localhost:3000",
              "https://corptube-alpha.vercel.app", 
-             "https://www.corptube.in"],
+             "https://www.corptube.in",
+             "https://corptube.in",
+            ],
+             
     methods: ["GET", "POST","PUT","DELETE"],
   },
    path: "/socket.io",
