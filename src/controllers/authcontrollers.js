@@ -107,10 +107,10 @@ try{
       await referredUser.save();
     }
  
-   const generateReferralCode = (fullName) => {
+   const generateReferralCode = (name) => {
   const prefix = "CT"; // short for CorpTube
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase(); // e.g. X4KQ1
-  const namePart = fullName ? fullName.substring(0, 3).toUpperCase() : "USR"; // e.g. PAN
+  const namePart = name ? name.substring(0, 3).toUpperCase() : "USR"; // e.g. PAN
   return `${prefix}-${namePart}${randomPart}`; // e.g. CT-PANX4KQ1
   };
 
@@ -119,7 +119,7 @@ try{
   const coins = 100;
 
     // Generate unique referral code
-    const userreferralCode = generateReferralCode(fullName);
+    const userreferralCode = generateReferralCode(name);
 
   if(!user){
     user = await users.create({
