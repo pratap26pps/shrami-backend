@@ -92,6 +92,34 @@ try{
     }
 
   let user = await users.findOne({email:email});
+   const existingUserId = await users.findOne({ userId: userId });
+          if (existingUserId) {
+            return res.status(409).json({
+            success: false,
+            message: "User ID already taken"  
+     
+            });
+          }
+
+    const referredUser = await users.findOne({ referralCode: referralCode });
+    if (referredUser) {
+      referredUser.totalcoins += 100;
+      await referredUser.save();
+    }
+ 
+   const generateReferralCode = (fullName) => {
+  const prefix = "CT"; // short for CorpTube
+  const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase(); // e.g. X4KQ1
+  const namePart = fullName ? fullName.substring(0, 3).toUpperCase() : "USR"; // e.g. PAN
+  return `${prefix}-${namePart}${randomPart}`; // e.g. CT-PANX4KQ1
+  };
+
+
+
+  const coins = 100;
+
+    // Generate unique referral code
+    const userreferralCode = generateReferralCode(fullName);
 
   if(!user){
     user = await users.create({
@@ -100,9 +128,9 @@ try{
       password:"GOOGLE",
       profilePhoto:picture,
       accountType,
-      referralCode,
+      referralCode :userreferralCode,
       userId,
-      provider:"google",
+      totalcoins:coins,
     })
   }
 
@@ -112,14 +140,13 @@ try{
       name: user.fullName,
       email: user.email,
       picture: user.profilePhoto,
-      accountType: user.accountType,
-      provider: user.provider,
-      userId: user.userId,
-      referralCode: user.referralCode,
-      totalcoins: user.totalcoins,
-      portfolio: user.portfolio,
-      supporting: user.supporting,
-      supporters: user.supporters,
+      accountType: user?.accountType,
+      userId: user?.userId,
+      referralCode: user?.referralCode,
+      totalcoins: user?.totalcoins,
+      portfolio: user?.portfolio,
+      supporting: user?.supporting,
+      supporters: user?.supporters,
     },
     process.env.JWT_SECRET,
     { expiresIn: "30d" }

@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-const {Schema} = mongoose;
+ 
 const userSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
@@ -19,12 +18,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "/assets/landingphoto/Rectangle158.png",
     },
-    provider:{
-      type: String,
-      enum: ["credentials", "google"],
-      default: "credentials",
-      required: true,
-    },
+ 
     referralCode:{ type: String },
     totalcoins:{ type: Number },
    portfolio:{ type: String },
