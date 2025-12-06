@@ -21,9 +21,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://corptube-alpha.vercel.app"
+      "https://corptube-alpha.vercel.app",
+      "https://www.corptube.in",
     ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
@@ -36,8 +38,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://corptube-alpha.vercel.app"],
-    methods: ["GET", "POST"],
+    origin: ["http://localhost:3000",
+             "https://corptube-alpha.vercel.app", 
+             "https://www.corptube.in"],
+    methods: ["GET", "POST","PUT","DELETE"],
   },
    path: "/socket.io",
 });
