@@ -8,5 +8,4 @@ router.get("/google", googleLogin);
 router.get("/callback/google", callback);
 
 router.post("/googleauthcreation", googleauthcreation);
-
 export default router;

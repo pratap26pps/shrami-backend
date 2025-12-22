@@ -57,12 +57,6 @@ export const callback = async (req, res) => {
           picture: user.profilePhoto,
           accountType: user.accountType,
           provider: user.provider,
-          userId: user.userId,
-          referralCode: user.referralCode,
-          totalcoins: user.totalcoins,
-          portfolio: user.portfolio,
-          supporting: user.supporting,
-          supporters: user.supporters,
         },
         process.env.JWT_SECRET,
         { expiresIn: "30d" }
@@ -86,40 +80,22 @@ export const callback = async (req, res) => {
 export const googleauthcreation = async (req,res) => {
   
 try{
-    const {name,email,picture,accountType,referralCode,userId} = req.body;
+    const {name,email,picture,accountType} = req.body;
     if(!name || !email || !picture){
       return res.status(400).json({success:false,error:"All fields are required"})
     }
 
   let user = await users.findOne({email:email});
-   const existingUserId = await users.findOne({ userId: userId });
-          if (existingUserId) {
-            return res.status(409).json({
-            success: false,
-            message: "User ID already taken"  
-     
-            });
-          }
-
-    const referredUser = await users.findOne({ referralCode: referralCode });
-    if (referredUser) {
-      referredUser.totalcoins += 100;
-      await referredUser.save();
-    }
  
-   const generateReferralCode = (name) => {
-  const prefix = "CT"; // short for CorpTube
+   const generateUserId = (name) => {
+  const prefix = "SH"; // short for  shrami
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase(); // e.g. X4KQ1
   const namePart = name ? name.substring(0, 3).toUpperCase() : "USR"; // e.g. PAN
-  return `${prefix}-${namePart}${randomPart}`; // e.g. CT-PANX4KQ1
+  return `${prefix}-${namePart}${randomPart}`; // e.g. SH-PANX4KQ1
   };
 
-
-
-  const coins = 100;
-
     // Generate unique referral code
-    const userreferralCode = generateReferralCode(name);
+    const userId = generateUserId(name);
 
   if(!user){
     user = await users.create({
@@ -128,9 +104,9 @@ try{
       password:"GOOGLE",
       profilePhoto:picture,
       accountType,
-      referralCode :userreferralCode,
+    
       userId,
-      totalcoins:coins,
+ 
     })
   }
 
@@ -142,11 +118,7 @@ try{
       picture: user.profilePhoto,
       accountType: user?.accountType,
       userId: user?.userId,
-      referralCode: user?.referralCode,
-      totalcoins: user?.totalcoins,
-      portfolio: user?.portfolio,
-      supporting: user?.supporting,
-      supporters: user?.supporters,
+  
     },
     process.env.JWT_SECRET,
     { expiresIn: "30d" }
