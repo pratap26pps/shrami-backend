@@ -2,6 +2,8 @@
 import users from "../models/users.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import Otp from "../models/Otp.js";
+ 
  
 
 const cookieOptions = {
@@ -135,3 +137,58 @@ try{
  return res.status(500).json({success:false,error:err.message})
 }
 }
+
+ 
+
+
+export const verifyOtpAndSignup = async (req, res) => {
+  try {
+    const { fullName, ContactNumber, password, accountType, otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({ success: false, message: "OTP required" });
+    }
+
+    const otpRecord = await Otp.findOne({ contactNumber: ContactNumber });
+
+    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < Date.now()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    const generateUserId = (fullName) => {
+      const prefix = "SH";
+      const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const namePart = fullName.substring(0, 3).toUpperCase();
+      return `${prefix}-${namePart}${randomPart}`;
+    };
+
+    const userId = generateUserId(fullName);
+
+    const user = await users.create({
+      fullName,
+      ContactNumber,
+      password,
+      accountType,
+      userId,
+      isVerified: true,
+    });
+
+    await Otp.deleteOne({ contactNumber: ContactNumber });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.cookie("token", token, { httpOnly: true });
+
+    res.json({
+      success: true,
+      message: "Signup verified successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
