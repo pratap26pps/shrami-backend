@@ -54,3 +54,6 @@ next-env.d.ts
 # Snyk Security Extension - AI Rules (auto-generated)
 .windsurf/rules/snyk_rules.md
 .env
+
+# Firebase Admin SDK secret
+src/config/firebase-service-account.jsonsrc/config/firebase-service-account.json
