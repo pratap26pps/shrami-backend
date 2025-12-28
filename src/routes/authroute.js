@@ -4,7 +4,6 @@ const router = express.Router();
 import { googleLogin,
    callback,
    googleauthcreation,
-   verifyOtpAndSignup,
    verifyOtpAndSignup } from "../controllers/authcontrollers.js";
  
 router.get("/google", googleLogin);

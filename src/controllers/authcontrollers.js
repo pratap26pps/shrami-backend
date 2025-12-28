@@ -2,7 +2,7 @@
 import users from "../models/users.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
-import Otp from "../models/Otp.js";
+ 
  
  
 
