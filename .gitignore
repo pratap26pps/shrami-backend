@@ -56,4 +56,4 @@ next-env.d.ts
 .env
 
 # Firebase Admin SDK secret
-src/config/firebase-service-account.jsonsrc/config/firebase-service-account.json
+src/config/firebase-service-account.json
