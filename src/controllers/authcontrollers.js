@@ -138,22 +138,15 @@ try{
 }
 }
 
- 
 
-
-export const verifyOtpAndSignup = async (req, res) => {
+ export const verifyOtpAndSignup =  async (req, res) => {
   try {
-    const { fullName, ContactNumber, password, accountType, otp } = req.body;
+    const { fullName,  password, accountType, token } = req.body;
 
-    if (!otp) {
-      return res.status(400).json({ success: false, message: "OTP required" });
-    }
+    const decoded = await admin.auth().verifyIdToken(token);
+    const ContactNumber = decoded.phone_number;
 
-    const otpRecord = await Otp.findOne({ contactNumber: ContactNumber });
-
-    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < Date.now()) {
-      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
-    }
+    let user = await users.findOne({ ContactNumber });
 
     const generateUserId = (fullName) => {
       const prefix = "SH";
@@ -164,31 +157,21 @@ export const verifyOtpAndSignup = async (req, res) => {
 
     const userId = generateUserId(fullName);
 
-    const user = await users.create({
-      fullName,
-      ContactNumber,
-      password,
-      accountType,
-      userId,
-      isVerified: true,
-    });
 
-    await Otp.deleteOne({ contactNumber: ContactNumber });
+    if (!user) {
+      user = await users.create({fullName, ContactNumber,userId,accountType,password, isVerified: true });
+    }
 
-    const token = jwt.sign(
-      { id: user._id },
+    const appToken = jwt.sign(
+      { userId: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "7d" }
     );
-
-    res.cookie("token", token, { httpOnly: true });
-
-    res.json({
-      success: true,
-      message: "Signup verified successfully",
-      user,
-    });
+      res.cookie("token", appToken, { httpOnly: true });
+    res.json({ success: true, message: "Signup verified successfully", token: appToken, user });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(401).json({ success: false, error: err.message });
   }
 };
+
+ 
