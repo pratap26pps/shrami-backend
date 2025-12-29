@@ -4,7 +4,7 @@ const router = express.Router();
 import { googleLogin,
    callback,
    googleauthcreation,
-   verifyOtpAndSignup,LoginHandler } from "../controllers/authcontrollers.js";
+   verifyOtpAndSignup,LoginHandler,forgotPassword,resetPassword } from "../controllers/authcontrollers.js";
  
 router.get("/google", googleLogin);
 router.get("/callback/google", callback);
@@ -17,5 +17,7 @@ router.post("/googleauthcreation", googleauthcreation);
 router.post("/SignupHandler", verifyOtpAndSignup);                         
  
 router.post("LoginHandler", LoginHandler)
+router.post("forgot-password", forgotPassword)
+router.post("reset-password", resetPassword)
 
 export default router;

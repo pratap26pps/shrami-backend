@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "/assets/landingphoto/Rectangle158.png",
     },
+    resetOtp: Number,
+    resetOtpExpiry: Date,
+
   },
   { timestamps: true }
 )

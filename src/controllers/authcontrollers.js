@@ -3,7 +3,7 @@ import users from "../models/users.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
  import bcrypt from "bcryptjs";
- 
+ import admin from "../config/firebaseAdmin.js";
  
 
 const cookieOptions = {
@@ -247,6 +247,62 @@ export const LoginHandler = async (req, res) => {
     });
   }
 };
+
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    // 🔐 Verify Firebase token
+    const decoded = await admin.auth().verifyIdToken(token);
+    const ContactNumber = decoded.phone_number.replace("+91", "");
+
+    const user = await users.findOne({ ContactNumber });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "OTP verified, proceed to reset password",
+    });
+  } catch (err) {
+    res.status(401).json({
+      success: false,
+      error: "Invalid or expired token",
+    });
+  }
+};
+
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, password } = req.body;
+
+    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+
+    const user = await users.findOne({
+      ContactNumber: decoded.ContactNumber,
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetOtp = undefined;
+    user.resetOtpExpiry = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful" });
+  } catch (err) {
+    res.status(401).json({ success: false, error: "Invalid or expired token" });
+  }
+};
+
 
 
  
