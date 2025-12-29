@@ -2,7 +2,7 @@
 import users from "../models/users.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
- 
+ import bcrypt from "bcryptjs";
  
  
 
@@ -142,7 +142,7 @@ try{
  export const verifyOtpAndSignup =  async (req, res) => {
   try {
     const { fullName,  password, accountType, token } = req.body;
-
+    
     const decoded = await admin.auth().verifyIdToken(token);
     const ContactNumber = decoded.phone_number;
 
@@ -156,10 +156,17 @@ try{
     };
 
     const userId = generateUserId(fullName);
-
+      // 🔐 HASH PASSWORD HERE
+      const hashedPassword = await bcrypt.hash(password, 10);
 
     if (!user) {
-      user = await users.create({fullName, ContactNumber,userId,accountType,password, isVerified: true });
+      user = await users.create(
+        {fullName, 
+          ContactNumber,
+          userId,
+          accountType,
+          password:hashedPassword,
+           isVerified: true });
     }
 
     const appToken = jwt.sign(
@@ -173,5 +180,73 @@ try{
     res.status(401).json({ success: false, error: err.message });
   }
 };
+
+
+
+export const LoginHandler = async (req, res) => {
+  try {
+    const { ContactNumber, password } = req.body;
+
+    // 1️⃣ Validate input
+    if (!ContactNumber || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Contact number and password are required",
+      });
+    }
+
+    // 2️⃣ Find user
+    const user = await users.findOne({ ContactNumber });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid contact number",
+      });
+    }
+
+    // 3️⃣ Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid password",
+      });
+    }
+
+    // 4️⃣ Generate JWT
+    const appToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // 5️⃣ Set cookie (optional for web)
+    res.cookie("token", appToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    // 6️⃣ Success response
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token: appToken,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        ContactNumber: user.ContactNumber,
+        accountType: user.accountType,
+      },
+    });
+  } catch (err) {
+    console.error("LOGIN ERROR 👉", err);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+};
+
 
  
