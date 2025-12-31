@@ -44,16 +44,23 @@ export const callback = async (req, res) => {
         },
       }
     );
-      let user = await users.findOne({email:userRes.data.email});
-      if(!user){
-   return res.redirect(
-  `${process.env.FRONTEND_SERVICE}/google-callback?email=${userRes.data.email}&name=${userRes.data.name}&picture=${userRes.data.picture}`
-   );
+      let user = await users.findOne({ email: userRes.data.email });
+
+      /* ------------------ NEW USER ------------------ */
+      if (!user) {
+        // Redirect to app for signup completion
+        return res.redirect(
+          `${process.env.FRONTEND_MOBILE_SCHEME}google-callback?` +
+          `email=${encodeURIComponent(userRes.data.email)}&` +
+          `name=${encodeURIComponent(userRes.data.name)}&` +
+          `picture=${encodeURIComponent(userRes.data.picture)}`
+        );
       }
-      else{
+
+      /* ------------------ EXISTING USER ------------------ */
       const token = jwt.sign(
         {
-          id: user.id,
+          id: user._id,
           name: user.fullName,
           email: user.email,
           picture: user.profilePhoto,
@@ -63,11 +70,12 @@ export const callback = async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "30d" }
       );
+
       res.cookie("token", token, cookieOptions);
 
-      return res.redirect(`${process.env.FRONTEND_SERVICE}/dashboard/${user?.id}`);
-         }
-
+      return res.redirect(
+        `${process.env.FRONTEND_MOBILE_SCHEME}auth-success?token=${token}&userId=${user._id}`
+      );
        } catch (error) {
     console.error(
       "Error during Google OAuth callback:",
