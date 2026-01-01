@@ -50,11 +50,12 @@ export const callback = async (req, res) => {
       if (!user) {
         // Redirect to app for signup completion
         return res.redirect(
-          `${process.env.FRONTEND_MOBILE_SCHEME}google-callback?` +
-          `email=${encodeURIComponent(userRes.data.email)}&` +
-          `name=${encodeURIComponent(userRes.data.name)}&` +
-          `picture=${encodeURIComponent(userRes.data.picture)}`
-        );
+  `${process.env.FRONTEND_MOBILE_SCHEME}://google-callback?` +
+  `email=${encodeURIComponent(userRes.data.email)}&` +
+  `name=${encodeURIComponent(userRes.data.name)}&` +
+  `picture=${encodeURIComponent(userRes.data.picture)}`
+);
+
       }
 
       /* ------------------ EXISTING USER ------------------ */
@@ -73,8 +74,9 @@ export const callback = async (req, res) => {
 
       res.cookie("token", token, cookieOptions);
 
-    return res.redirect(
-  `${process.env.FRONTEND_MOBILE_SCHEME}://auth-success?token=${token}&userId=${user.id}`
+return res.redirect(
+  `${process.env.FRONTEND_MOBILE_SCHEME}://auth-success?` +
+  `token=${token}&userId=${user.id}`
 );
 
        } catch (error) {
