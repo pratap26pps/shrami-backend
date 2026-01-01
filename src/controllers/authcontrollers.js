@@ -73,9 +73,10 @@ export const callback = async (req, res) => {
 
       res.cookie("token", token, cookieOptions);
 
-      return res.redirect(
-        `${process.env.FRONTEND_MOBILE_SCHEME}auth-success?token=${token}&userId=${user._id}`
-      );
+    return res.redirect(
+  `${process.env.FRONTEND_MOBILE_SCHEME}://auth-success?token=${token}&userId=${user.id}`
+);
+
        } catch (error) {
     console.error(
       "Error during Google OAuth callback:",
@@ -138,9 +139,10 @@ try{
      return res.json({
       success: true,
       message: "Google signup successful",
-      user: user,
+      token,
+      user,
     });
-
+  
 }catch(err){
  return res.status(500).json({success:false,error:err.message})
 }
