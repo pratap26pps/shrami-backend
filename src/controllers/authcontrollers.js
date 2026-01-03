@@ -44,17 +44,26 @@ export const callback = async (req, res) => {
         },
       }
     );
-      let user = await users.findOne({ email: userRes.data.email });
 
+    const { email, name, picture } = userRes.data;
+      let user = await users.findOne({ email});
+
+   const generateUserId = (name) => {
+      const prefix = "SH";
+      const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const namePart = name?.substring(0, 3).toUpperCase() || "USR";
+      return `${prefix}-${namePart}${randomPart}`;
+    };
       /* ------------------ NEW USER ------------------ */
-      if (!user) {
-        // Redirect to app for signup completion
-        return res.redirect(
-  `${process.env.FRONTEND_MOBILE_SCHEME}://google-callback?` +
-  `email=${encodeURIComponent(userRes.data.email)}&` +
-  `name=${encodeURIComponent(userRes.data.name)}&` +
-  `picture=${encodeURIComponent(userRes.data.picture)}`
-);
+      if (!user) { 
+         user = await users.create({
+        fullName: name,
+        email,
+        password: "GOOGLE",
+        profilePhoto: picture,
+        provider: "google",
+        userId: generateUserId(name),
+      }); 
 
       }
 
@@ -88,72 +97,10 @@ return res.redirect(
   }
 };
 
-// user creation at db whith extra info 
-
-export const googleauthcreation = async (req,res) => {
-  
-try{
-    const {name,email,picture,accountType} = req.body;
-    if(!name || !email || !picture){
-      return res.status(400).json({success:false,error:"All fields are required"})
-    }
-
-  let user = await users.findOne({email:email});
- 
-   const generateUserId = (name) => {
-  const prefix = "SH"; // short for  shrami
-  const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase(); // e.g. X4KQ1
-  const namePart = name ? name.substring(0, 3).toUpperCase() : "USR"; // e.g. PAN
-  return `${prefix}-${namePart}${randomPart}`; // e.g. SH-PANX4KQ1
-  };
-
-    // Generate unique referral code
-    const userId = generateUserId(name);
-
-  if(!user){
-    user = await users.create({
-      fullName:name,
-      email:email,
-      password:"GOOGLE",
-      profilePhoto:picture,
-      accountType,
-    
-      userId,
- 
-    })
-  }
-
-  const token = jwt.sign(
-    {
-      id: user.id,
-      name: user.fullName,
-      email: user.email,
-      picture: user.profilePhoto,
-      accountType: user?.accountType,
-      userId: user?.userId,
-  
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "30d" }
-  );
-
-  res.cookie("token", token, cookieOptions);
-     return res.json({
-      success: true,
-      message: "Google signup successful",
-      token,
-      user,
-    });
-  
-}catch(err){
- return res.status(500).json({success:false,error:err.message})
-}
-}
-
 
  export const verifyOtpAndSignup =  async (req, res) => {
   try {
-    const { fullName,  password, accountType, token } = req.body;
+    const { fullName,  password, token } = req.body;
     
     const decoded = await admin.auth().verifyIdToken(token);
     const ContactNumber = decoded.phone_number;
@@ -176,9 +123,8 @@ try{
         {fullName, 
           ContactNumber,
           userId,
-          accountType,
           password:hashedPassword,
-           isVerified: true });
+          sVerified: true });
     }
 
     const appToken = jwt.sign(
