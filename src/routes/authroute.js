@@ -12,8 +12,8 @@ router.get("/callback/google", callback);
 
 router.post("/SignupHandler", verifyOtpAndSignup);                         
  
-router.post("LoginHandler", LoginHandler)
-router.post("forgot-password", forgotPassword)
-router.post("reset-password", resetPassword)
+router.post("/LoginHandler", LoginHandler)
+router.post("/forgot-password", forgotPassword)
+router.post("/reset-password", resetPassword)
 
 export default router;
