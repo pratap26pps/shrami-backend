@@ -1,16 +1,14 @@
-// models/Worker.js
 import mongoose from "mongoose";
 
 const workerSchema = new mongoose.Schema({
+  id: Number,
   name: String,
   age: Number,
-  gender: String,
+  location: String,
   experience: Number,
-  rating: Number,
-  skills: [String],
-  languages: [String],
-  workType: String,
-  hours: Number,
+  gender: String,
+  skills: String,
+  image: String,
 });
 
-export default mongoose.model("Worker", workerSchema);
+export default mongoose.model("Worker", workerSchema, "Worker");

@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./src/config/db.js";
 import authRoutes from "./src/routes/authroute.js";
+import workerruter from "./src/routes/workerroute.js"
 
 connectDB();
 
@@ -21,6 +22,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/worker", workerruter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
