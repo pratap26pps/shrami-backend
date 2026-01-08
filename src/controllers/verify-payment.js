@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import connectDB from '../config/db';
-import Order from '../models/Order';
+import connectDB from '../config/db.js';
+import Order from '../models/Order.js';
 
 export const VerifyPayments = async (req, res) => {
 

@@ -1,5 +1,5 @@
-import connectDB from '../config/db';
-import Order from '../models/Order';
+import connectDB from '../config/db.js';
+import Order from '../models/Order.js';
  
 
 function padOrderNumber(num) {
