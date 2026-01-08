@@ -19,10 +19,13 @@ export const VerifyPayments = async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       order_id,  
+      customerName,
+      customerMobile,
+      amount
     } = req.body;
-
     // Validate required fields
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature
+       || !order_id || !amount || !customerName || !customerMobile ) {
       return res.status(400).json({
         success: false,
         message: 'Missing required payment verification data'
@@ -45,32 +48,26 @@ export const VerifyPayments = async (req, res) => {
       });
     }
 
-    // Update order status in database
-    const updatedOrder = await Order.findByIdAndUpdate(
-      order_id,
-      {
-        paymentStatus: 'completed',
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        razorpaySignature: razorpay_signature,
-        updatedAt: new Date()
-      },
-      { new: true }
-    );
 
-    if (!updatedOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
+    // 🎉 Create order in MongoDB after successful verification
+    const newOrder = await Order.create({
+      amount,
+      customerName,
+      customerMobile,
+      paymentStatus: 'completed',
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      createdAt: new Date(),
+    });
+  
 
     res.status(200).json({
       success: true,
       message: 'Payment verified successfully',
       data: {
-        orderId: updatedOrder._id,
-        paymentStatus: updatedOrder.paymentStatus,
+        orderId: newOrder._id,
+        paymentStatus: newOrder.paymentStatus,
         razorpayPaymentId: razorpay_payment_id
       }
     });
