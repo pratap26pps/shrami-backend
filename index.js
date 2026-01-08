@@ -24,6 +24,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/worker", workerruter);
 
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
