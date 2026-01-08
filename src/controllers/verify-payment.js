@@ -18,11 +18,11 @@ export const VerifyPayments = async (req, res) => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      order_id, // Our internal order ID
+      // order_id, // Our internal order ID
     } = req.body;
 
     // Validate required fields
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
         message: 'Missing required payment verification data'
@@ -46,14 +46,13 @@ export const VerifyPayments = async (req, res) => {
     }
 
     // Update order status in database
-    const updatedOrder = await Order.findByIdAndUpdate(
-      order_id,
+      const updatedOrder = await Order.findOneAndUpdate(
+      { razorpayOrderId: razorpay_order_id },
       {
         paymentStatus: 'completed',
-        razorpayOrderId: razorpay_order_id,
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       { new: true }
     );
