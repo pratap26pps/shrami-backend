@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const workerSchema = new mongoose.Schema({
+ 
   id: Number,
   name: String,
   age: Number,
@@ -9,6 +10,16 @@ const workerSchema = new mongoose.Schema({
   gender: String,
   skills: String,
   image: String,
+
+  // NEW FIELDS
+  workingHours: String,
+  physicalAbility: String,
+  language: String,
+  price: Number,
+  workType: String,
 });
 
 export default mongoose.model("Worker", workerSchema, "Worker");
+
+ 
+ 
