@@ -83,12 +83,11 @@ export const callback = async (req, res) => {
 
       res.cookie("token", token, cookieOptions);
 
-return res.redirect(
-  `${process.env.FRONTEND_MOBILE_SCHEME}://auth-success?` +
-  `token=${token}&userId=${user.id}`
-);
-
-       } catch (error) {
+    const scheme = process.env.FRONTEND_MOBILE_SCHEME || "shramiapp";
+    const appUrl = `${scheme}://auth-success?token=${encodeURIComponent(token)}&userId=${user.id}`;
+    const baseUrl = process.env.BACKEND_URL || "https://shrami-backend.onrender.com";
+    return res.redirect(`${baseUrl}/api/auth/open-app?redirect=${encodeURIComponent(appUrl)}`);
+  } catch (error) {
     console.error(
       "Error during Google OAuth callback:",
       error.response?.data || error.message
@@ -97,6 +96,28 @@ return res.redirect(
   }
 };
 
+/** Serves a small HTML page that redirects to the app (shramiapp://auth-success?token=...). */
+export const openAppPage = (req, res) => {
+  const redirect = req.query.redirect || "";
+  const safeRedirect = redirect.startsWith("shramiapp://") ? redirect : "";
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Shrami...</title>
+  ${safeRedirect ? `<meta http-equiv="refresh" content="0;url=${esc(safeRedirect)}">` : ""}
+</head>
+<body>
+  <p style="font-family:sans-serif;text-align:center;padding:2rem;">Opening Shrami app...</p>
+  ${safeRedirect ? `<p style="font-family:sans-serif;text-align:center;"><a href="${esc(safeRedirect)}">Tap here if the app doesn't open</a></p>
+  <script>window.location.href = ${JSON.stringify(safeRedirect)};</script>` : ""}
+</body>
+</html>`;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(html);
+};
 
  export const verifyOtpAndSignup =  async (req, res) => {
   try {
