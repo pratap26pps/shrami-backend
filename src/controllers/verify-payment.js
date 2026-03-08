@@ -31,7 +31,7 @@ export const VerifyPayments = async (req, res) => {
       });
     }
 
-    const secret = process.env.RAZORPAY_SECRET?.trim();
+    const secret = (process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET)?.trim();
     if (!secret) {
       return res.status(500).json({
         success: false,
