@@ -227,6 +227,43 @@ export const LoginHandler = async (req, res) => {
   }
 };
 
+/** GET /me – return current user from Bearer token (for app startup / profile) */
+export const getMe = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, error: "Token required" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Invalid token" });
+    }
+    const user = await users.findById(userId).select("-password -resetOtp -resetOtpExpiry");
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        ContactNumber: user.ContactNumber,
+        profilePhoto: user.profilePhoto,
+        email: user.email,
+        accountType: user.accountType,
+        userId: user.userId,
+      },
+    });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res.status(401).json({ success: false, error: "Invalid or expired token" });
+    }
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const LogoutHandler = async (req, res) => {
   try {
     // Clear cookie (for web support)

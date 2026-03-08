@@ -18,24 +18,30 @@ export const VerifyPayments = async (req, res) => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      order_id,  
+      order_id,
       customerName,
       customerMobile,
       amount
     } = req.body;
-    // Validate required fields
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature
-       || !order_id || !amount || !customerName || !customerMobile ) {
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !amount) {
       return res.status(400).json({
         success: false,
         message: 'Missing required payment verification data'
       });
     }
 
-    // Verify payment signature
+    const secret = process.env.RAZORPAY_SECRET?.trim();
+    if (!secret) {
+      return res.status(500).json({
+        success: false,
+        message: 'Payment configuration error'
+      });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_SECRET)
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
@@ -49,11 +55,10 @@ export const VerifyPayments = async (req, res) => {
     }
 
 
-    // 🎉 Create order in MongoDB after successful verification
     const newOrder = await Order.create({
       amount,
-      customerName,
-      customerMobile,
+      customerName: customerName || 'Customer',
+      customerMobile: customerMobile || '0000000000',
       paymentStatus: 'completed',
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,

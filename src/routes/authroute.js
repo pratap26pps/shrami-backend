@@ -4,11 +4,13 @@ const router = express.Router();
 import { googleLogin,
    callback,
    openAppPage,
+   getMe,
    verifyOtpAndSignup,LoginHandler,LogoutHandler,forgotPassword,resetPassword } from "../controllers/authcontrollers.js";
 
 router.get("/google", googleLogin);
 router.get("/callback/google", callback);
 router.get("/open-app", openAppPage);
+router.get("/me", getMe);
 
 // manually registration process
 

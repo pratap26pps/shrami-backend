@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: true, // Allow all origins (mobile app, web, local dev)
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
